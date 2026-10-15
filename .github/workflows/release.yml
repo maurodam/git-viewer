@@ -19,9 +19,12 @@ jobs:
           - platform: windows
             os: windows-latest
             command: npm run dist -- --publish never
-          - platform: macos
+          - platform: macos-silicon
             os: macos-latest
-            command: npm run dist:mac -- --publish never
+            command: npm run dist:mac -- --arm64 --publish never
+          - platform: macos-intel
+            os: macos-latest
+            command: npm run dist:mac -- --x64 --publish never
     steps:
       - name: Check out source
         uses: actions/checkout@v4
