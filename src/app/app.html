@@ -1,0 +1,147 @@
+<header class="flex h-12 shrink-0 items-center gap-1 border-b px-2">
+  <button hlmBtn variant="ghost" size="sm" class="gap-2" [hlmDropdownMenuTrigger]="repoMenu">
+    <ng-icon name="lucideFolderGit2" size="16" />
+    <span class="max-w-72 truncate font-semibold">{{ git.repoName() || 'Open repository' }}</span>
+    @if (git.branch(); as b) {
+      <span class="text-muted-foreground max-w-60 truncate font-normal">({{ b.name }})</span>
+    }
+    <ng-icon name="lucideChevronDown" size="14" />
+  </button>
+
+  <ng-template #repoMenu>
+    <hlm-dropdown-menu class="w-96">
+      <button hlmDropdownMenuItem (triggered)="git.openRepo()">
+        <ng-icon name="lucideFolderOpen" />
+        Open repository…
+      </button>
+      @if (git.recent().length) {
+        <hlm-dropdown-menu-separator />
+        <hlm-dropdown-menu-label>Recent</hlm-dropdown-menu-label>
+        @for (r of git.recent(); track r) {
+          <button hlmDropdownMenuItem (triggered)="git.setRepo(r)" [title]="r">
+            <span class="truncate">{{ r }}</span>
+          </button>
+        }
+      }
+    </hlm-dropdown-menu>
+  </ng-template>
+
+  @if (git.repo()) {
+    <div class="ms-2 flex items-center gap-0.5">
+      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Fetch all remotes" [disabled]="git.busy()" (click)="git.fetch()">
+        <ng-icon name="lucideRefreshCcwDot" /> Fetch
+      </button>
+      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Pull current branch" [disabled]="git.busy()" (click)="git.pull()">
+        <ng-icon name="lucideArrowDownToLine" /> Pull
+        @if (git.branch()?.behind) {
+          <span class="text-xs tabular-nums">{{ git.branch()?.behind }}</span>
+        }
+      </button>
+      <!-- Solid button when there are local commits to push. -->
+      <button
+        hlmBtn
+        [variant]="git.branch()?.ahead ? 'default' : 'ghost'"
+        size="sm"
+        hlmTooltip="Push current branch"
+        [disabled]="git.busy()"
+        (click)="git.push()"
+      >
+        <ng-icon name="lucideArrowUpFromLine" /> Push
+        @if (git.branch()?.ahead) {
+          <span class="border-s border-current/40 ps-1.5 tabular-nums">{{ git.branch()?.ahead }}</span>
+        }
+      </button>
+    </div>
+  }
+
+  <div class="ms-auto flex items-center gap-1">
+    @if (git.busy()) {
+      <hlm-spinner class="size-4" />
+    }
+    @if (git.repo()) {
+      <button hlmBtn variant="ghost" size="icon-sm" hlmTooltip="Refresh" aria-label="Refresh" (click)="git.refresh()">
+        <ng-icon name="lucideRefreshCw" />
+      </button>
+    }
+    <button hlmBtn variant="ghost" size="icon-sm" [hlmTooltip]="'Theme: ' + theme()" aria-label="Toggle theme" (click)="cycleTheme()">
+      <ng-icon [name]="themeIcon()" />
+    </button>
+  </div>
+</header>
+
+@if (git.repo()) {
+  <hlm-resizable-group class="min-h-0 flex-1">
+    <hlm-resizable-panel [defaultSize]="18" [minSize]="10">
+      <app-branches />
+    </hlm-resizable-panel>
+    <hlm-resizable-handle />
+    <hlm-resizable-panel [defaultSize]="60" [minSize]="30">
+      <div class="flex h-full flex-col">
+        @if (git.tabs().length) {
+          <div class="bg-sidebar flex h-9 shrink-0 items-end gap-0.5 overflow-x-auto border-b px-1" role="tablist">
+            <button
+              role="tab"
+              class="hover:bg-muted flex h-8 shrink-0 items-center gap-1.5 rounded-t-lg px-3 text-xs"
+              [class.bg-background]="!git.activeTab()"
+              [class.font-semibold]="!git.activeTab()"
+              [attr.aria-selected]="!git.activeTab()"
+              (click)="git.activeTab.set(null)"
+            >
+              <ng-icon name="lucideHistory" size="14" /> History
+            </button>
+            @for (t of git.tabs(); track t.key) {
+              <div
+                role="tab"
+                class="hover:bg-muted flex h-8 max-w-64 shrink-0 items-center gap-1 rounded-t-lg ps-3 pe-1 text-xs"
+                [class.bg-background]="git.activeTab() === t.key"
+                [class.font-semibold]="git.activeTab() === t.key"
+                [attr.aria-selected]="git.activeTab() === t.key"
+                [title]="t.originalLabel + ' ↔ ' + t.modifiedLabel"
+              >
+                <button class="flex min-w-0 items-center gap-1.5" (click)="git.activeTab.set(t.key)">
+                  <ng-icon name="lucideFileDiff" size="14" class="shrink-0" />
+                  <span class="truncate">{{ t.modifiedLabel }}</span>
+                </button>
+                <button hlmBtn variant="ghost" size="icon-xs" aria-label="Close tab" (click)="git.closeTab(t.key)">
+                  <ng-icon name="lucideX" />
+                </button>
+              </div>
+            }
+          </div>
+        }
+        <!-- History stays alive (hidden) while a diff tab is open, so its scroll position survives. -->
+        <hlm-resizable-group direction="vertical" class="min-h-0 flex-1" [class.hidden]="git.activeTab()">
+          <hlm-resizable-panel [defaultSize]="65" [minSize]="20">
+            <app-history />
+          </hlm-resizable-panel>
+          @if (git.selectedCommit() || git.diff()) {
+            <hlm-resizable-handle />
+            <hlm-resizable-panel [defaultSize]="35" [minSize]="10">
+              <app-details />
+            </hlm-resizable-panel>
+          }
+        </hlm-resizable-group>
+        @for (t of git.tabs(); track t.key) {
+          @if (git.activeTab() === t.key) {
+            <app-diff-view class="flex-1" [diff]="t" [inTab]="true" />
+          }
+        }
+      </div>
+    </hlm-resizable-panel>
+    <hlm-resizable-handle />
+    <hlm-resizable-panel [defaultSize]="22" [minSize]="14">
+      <app-changes />
+    </hlm-resizable-panel>
+  </hlm-resizable-group>
+} @else {
+  <main class="flex flex-1 flex-col items-center justify-center gap-4">
+    <ng-icon name="lucideFolderGit2" size="56" class="text-muted-foreground" />
+    <h1 class="text-xl font-semibold">Git Viewer</h1>
+    <p class="text-muted-foreground text-sm">Open a local git repository to see its branches, history and changes.</p>
+    <button hlmBtn (click)="git.openRepo()">
+      <ng-icon name="lucideFolderOpen" /> Open repository
+    </button>
+  </main>
+}
+
+<hlm-toaster [theme]="theme()" richColors position="bottom-right" />
