@@ -27,6 +27,12 @@ Graph layout tests: `npm run test:graph`.
 `dist/git-viewer/browser/` go into the package. The icon is `build/icon.svg`, rendered to `build/icon.png` by
 `npx electron build/render-icon.cjs build`.
 
+## macOS disk image
+
+`npm run dist:mac` builds the Angular app and creates macOS `.dmg` and `.zip` packages in `release/`.
+Run this command on macOS. GitHub Actions builds Windows and macOS packages when you push a version tag (`v*`),
+then attaches the `.exe`, `.dmg`, and `.zip` files to that GitHub Release.
+
 ## How it works
 
 - `electron/main.cjs` runs `git` with `execFile` (no shell) for an allowlist of subcommands; the renderer reaches it only through `window.api` from `electron/preload.cjs`.
