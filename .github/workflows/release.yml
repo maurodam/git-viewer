@@ -18,10 +18,10 @@ jobs:
         include:
           - platform: windows
             os: windows-latest
-            command: npm run dist
+            command: npm run dist -- --publish never
           - platform: macos
             os: macos-latest
-            command: npm run dist:mac
+            command: npm run dist:mac -- --publish never
     steps:
       - name: Check out source
         uses: actions/checkout@v4
