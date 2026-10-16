@@ -136,7 +136,7 @@ import { type FileChange, GitService, type Stash } from './git.service';
         }
       </div>
       @if (open().staged) {
-        <app-file-list [files]="git.staged()" (open)="git.showWorkingDiff($event, true)">
+        <app-file-list [files]="git.staged()" [groupByFolder]="true" [repoPath]="git.repo() ?? ''" (open)="git.showWorkingDiff($event, true)">
           <ng-template let-f>
             <button hlmBtn variant="ghost" size="icon-xs" aria-label="Unstage" (click)="$event.stopPropagation(); git.unstage([f.path])">
               <ng-icon name="lucideMinus" />
@@ -161,7 +161,7 @@ import { type FileChange, GitService, type Stash } from './git.service';
         }
       </div>
       @if (open().changes) {
-        <app-file-list [files]="git.unstaged()" (open)="git.showWorkingDiff($event, false)">
+        <app-file-list [files]="git.unstaged()" [groupByFolder]="true" [repoPath]="git.repo() ?? ''" (open)="git.showWorkingDiff($event, false)">
           <ng-template let-f>
             <button hlmBtn variant="ghost" size="icon-xs" aria-label="Discard changes" (click)="$event.stopPropagation(); discard(f)">
               <ng-icon name="lucideUndo2" />

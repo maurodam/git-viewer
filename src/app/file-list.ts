@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, contentChild, input, output, TemplateRef } from '@angular/core';
+import { Component, computed, contentChild, input, output, TemplateRef } from '@angular/core';
 import type { FileChange } from './git.service';
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -18,7 +18,14 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   imports: [NgTemplateOutlet],
   template: `
     <ul class="text-[13px]">
-      @for (f of files(); track f.path) {
+      @for (group of groups(); track group.path) {
+        @if (groupByFolder()) {
+          <li class="text-muted-foreground flex items-center gap-2 px-2 pt-3 pb-1" [title]="group.fullPath">
+            <span class="shrink-0 text-xs font-semibold">{{ group.name }}</span>
+            <span class="min-w-0 flex-1 truncate text-right text-[10px]">{{ group.fullPath }}</span>
+          </li>
+        }
+        @for (f of group.files; track f.path) {
         <li
           tabindex="0"
           class="group/row hover:bg-muted/60 focus-visible:ring-ring flex h-7 cursor-default items-center gap-2 rounded-lg px-2 outline-none focus-visible:ring-2"
@@ -28,7 +35,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
           (dblclick)="openTab.emit(f)"
         >
           <span class="shrink-0 truncate">{{ name(f.path) }}</span>
-          <span class="text-muted-foreground min-w-0 flex-1 truncate text-xs">{{ dir(f.path) }}</span>
+          <span class="text-muted-foreground min-w-0 flex-1 truncate text-xs">{{ groupByFolder() ? '' : dir(f.path) }}</span>
           @if (actions(); as tpl) {
             <span class="hidden shrink-0 gap-0.5 group-focus-within/row:flex group-hover/row:flex">
               <ng-container *ngTemplateOutlet="tpl; context: { $implicit: f }" />
@@ -41,12 +48,32 @@ const STATUS: Record<string, { label: string; cls: string }> = {
             [attr.aria-label]="info(f).label"
           >{{ f.status === '?' ? 'A' : f.status }}</span>
         </li>
+        }
       }
     </ul>
   `,
 })
 export class FileList {
   readonly files = input.required<FileChange[]>();
+  readonly groupByFolder = input(false);
+  readonly repoPath = input('');
+  protected readonly groups = computed(() => {
+    if (!this.groupByFolder()) return [{ path: '', name: '', fullPath: '', files: this.files() }];
+    const folders = new Map<string, FileChange[]>();
+    for (const file of this.files()) {
+      const path = this.dir(file.path);
+      const files = folders.get(path) ?? [];
+      files.push(file);
+      folders.set(path, files);
+    }
+    const root = this.repoPath().replace(/[\\/]$/, '');
+    return [...folders].sort(([a], [b]) => a.localeCompare(b)).map(([path, files]) => ({
+      path,
+      name: path ? this.name(path) : 'Root',
+      fullPath: path ? `${root}/${path}` : root,
+      files,
+    }));
+  });
   readonly open = output<FileChange>();
   readonly openTab = output<FileChange>();
   protected readonly actions = contentChild(TemplateRef);
