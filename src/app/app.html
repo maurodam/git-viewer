@@ -81,6 +81,7 @@
     @if (git.busy()) {
       <hlm-spinner class="size-4" />
     }
+    <span class="text-muted-foreground me-2 shrink-0 text-xs tabular-nums" aria-label="Software version">v{{ version }}</span>
     @if (git.repo()) {
       <button hlmBtn variant="ghost" size="icon-sm" hlmTooltip="Refresh" aria-label="Refresh" (click)="git.refresh()">
         <ng-icon name="lucideRefreshCw" />

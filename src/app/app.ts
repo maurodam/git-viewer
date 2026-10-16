@@ -29,6 +29,7 @@ import { Details } from './details';
 import { DiffView } from './diff-view';
 import { GitService } from './git.service';
 import { History } from './history';
+import { SOFTWARE_VERSION } from './version';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -79,6 +80,7 @@ function readTheme(): Theme {
   templateUrl: './app.html',
 })
 export class App {
+  protected readonly version = SOFTWARE_VERSION;
   protected readonly git = inject(GitService);
   protected readonly branchesCollapsed = signal(false);
   protected readonly panelLayout = signal([18, 60, 22]);
