@@ -19,6 +19,7 @@ import {
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { injectAsk } from './ask-dialog';
@@ -27,7 +28,7 @@ import { type FileChange, GitService, type Stash } from './git.service';
 
 @Component({
   selector: 'app-changes',
-  imports: [NgIcon, HlmButtonImports, HlmCheckboxImports, HlmDropdownMenuImports, HlmTextareaImports, HlmTooltipImports, FileList],
+  imports: [NgIcon, HlmButtonImports, HlmCheckboxImports, HlmDropdownMenuImports, HlmTextareaImports, HlmTooltipImports, HlmInputImports, FileList],
   providers: [
     provideIcons({
       lucideArchive,
@@ -79,6 +80,15 @@ import { type FileChange, GitService, type Stash } from './git.service';
         (input)="message.set($any($event.target).value)"
         (keydown.control.enter)="commit()"
       ></textarea>
+      <input
+        hlmInput
+        class="mt-2 h-8 text-xs"
+        placeholder="Tag (optional, e.g. v1.0.0)"
+        aria-label="Commit tag (optional)"
+        [value]="tag()"
+        [disabled]="git.busy()"
+        (input)="tag.set($any($event.target).value)"
+      />
       <div class="mt-2 flex items-center gap-3">
         <div class="flex flex-1">
           <button hlmBtn size="sm" class="flex-1 rounded-e-none" [disabled]="!canCommit()" (click)="commit()">
@@ -213,11 +223,12 @@ export class Changes {
   protected readonly git = inject(GitService);
   private readonly ask = injectAsk();
   protected readonly message = signal('');
+  protected readonly tag = signal('');
   protected readonly amend = signal(false);
   protected readonly open = signal({ staged: true, changes: true, stashes: true });
 
   protected canCommit() {
-    return !!this.message().trim() && (this.amend() || this.git.staged().length + this.git.unstaged().length > 0);
+    return !this.git.busy() && !!this.message().trim() && (this.amend() || this.git.staged().length + this.git.unstaged().length > 0);
   }
 
   protected allOpen() {
@@ -242,10 +253,14 @@ export class Changes {
 
   protected async commit(push = false) {
     if (!this.canCommit()) return;
+    const tag = this.tag().trim();
+    if (tag && !(await this.git.validateNewTag(tag))) return;
     if (await this.git.commit(this.message().trim(), this.amend())) {
       this.message.set('');
       this.amend.set(false);
-      if (push) await this.git.push();
+      this.tag.set('');
+      if (tag && !(await this.git.createTag(tag))) return;
+      if (push) await this.git.push(tag);
     }
   }
 

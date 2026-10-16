@@ -40,6 +40,11 @@ const MAX_LANES = 14;
       <button hlmBtn size="xs" [variant]="git.showAll() ? 'default' : 'outline'" (click)="git.toggleAll()">
         All branches
       </button>
+      @if (git.selectedCommit(); as selected) {
+        <button hlmBtn variant="ghost" size="xs" [disabled]="git.busy()" (click)="addTag(selected)">
+          <ng-icon name="lucideTag" size="13" /> Add tag…
+        </button>
+      }
       <div class="relative ms-auto w-72">
         <ng-icon name="lucideSearch" size="14" class="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2" />
         <input
@@ -129,6 +134,7 @@ const MAX_LANES = 14;
 
     <ng-template #commitMenu let-c>
       <hlm-dropdown-menu class="w-60">
+        <button hlmDropdownMenuItem (triggered)="addTag(c)"><ng-icon name="lucideTag" />Add tag…</button>
         <button hlmDropdownMenuItem (triggered)="newBranch(c)">New branch here…</button>
         <button hlmDropdownMenuItem (triggered)="git.run(['switch', '--detach', c.hash], 'Checked out ' + c.hash.slice(0, 8))">
           Checkout (detached)
@@ -203,6 +209,16 @@ export class History {
     return r.startsWith('HEAD')
       ? { background: color, borderColor: color, color: '#fff' }
       : { background: `color-mix(in oklab, ${color} 18%, transparent)`, borderColor: color };
+  }
+
+  protected async addTag(c: Commit) {
+    const name = await this.ask({
+      title: 'Add tag',
+      description: `At ${c.hash.slice(0, 8)} ${c.subject}`,
+      input: 'v1.0.0',
+      confirm: 'Create tag',
+    });
+    if (typeof name === 'string' && name.trim()) await this.git.createTag(name.trim(), c.hash);
   }
 
   protected async newBranch(c: Commit) {

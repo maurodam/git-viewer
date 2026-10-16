@@ -415,10 +415,34 @@ export class GitService {
     return this.run(['pull'], 'Pulled');
   }
 
-  push() {
+  async push(tag = '') {
     const b = this.branch();
-    if (b && !b.upstream) return this.run(['push', '-u', 'origin', b.name], `Published ${b.name}`);
-    return this.run(['push'], 'Pushed');
+    const pushed = b && !b.upstream
+      ? await this.run(['push', '-u', 'origin', b.name], `Published ${b.name}`)
+      : await this.run(['push'], 'Pushed');
+    if (!pushed || !tag) return pushed;
+    const remote = b
+      ? (await this.git(['config', '--get', `branch.${b.name}.remote`]).catch(() => 'origin')).trim()
+      : 'origin';
+    return this.run(['push', remote, `refs/tags/${tag}:refs/tags/${tag}`], `Pushed tag ${tag}`);
+  }
+
+  async validateNewTag(name: string) {
+    try {
+      await this.git(['check-ref-format', `refs/tags/${name}`]);
+      if (name.startsWith('-')) throw new Error('Tag names cannot start with a dash.');
+      const existing = await this.git(['tag', '--list', '--', name]);
+      if (existing.trim()) throw new Error(`Tag ${name} already exists.`);
+      return true;
+    } catch (e) {
+      toast.error('Cannot create tag', { description: (e as Error).message });
+      return false;
+    }
+  }
+
+  async createTag(name: string, commit = 'HEAD') {
+    if (!(await this.validateNewTag(name))) return false;
+    return this.run(['tag', name, commit], `Created tag ${name}`);
   }
 
   // ---- working tree ----
