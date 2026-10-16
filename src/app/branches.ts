@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
+  lucideArrowUp,
   lucideCheck,
   lucideChevronRight,
   lucideCloud,
@@ -61,6 +62,7 @@ function tree(prefix: string, refs: Ref[], cut = 0): Node[] {
   imports: [NgIcon, NgTemplateOutlet, HlmButtonImports, HlmInputImports, HlmContextMenuImports, HlmDropdownMenuImports],
   providers: [
     provideIcons({
+      lucideArrowUp,
       lucideCheck,
       lucideChevronRight,
       lucideCloud,
@@ -112,12 +114,17 @@ function tree(prefix: string, refs: Ref[], cut = 0): Node[] {
           (dblclick)="git.checkout(ref)"
           (keydown.enter)="git.showHistory(ref.name)"
         >
+          <span class="relative flex size-3.5 shrink-0 items-center">
           <ng-icon
             [name]="ref.kind === 'tag' ? 'lucideTag' : 'lucideGitBranch'"
             size="14"
             class="shrink-0"
             [style.color]="ref.kind === 'tag' ? null : git.commitColors().get(ref.hash)"
           />
+          @if (isSyncedWithOrigin(ref)) {
+            <ng-icon name="lucideArrowUp" size="10" class="bg-sidebar absolute -right-1 -bottom-1 rounded-full text-emerald-500" aria-label="Synced with origin" title="Synced with origin" />
+          }
+          </span>
           <span class="truncate" [class.font-semibold]="ref.head">{{ node.label }}</span>
           @if (ref.head) {
             <ng-icon name="lucideCheck" size="13" class="text-emerald-500 shrink-0" aria-label="current branch" />
@@ -240,6 +247,11 @@ export class Branches {
   protected isSelected(ref: Ref) {
     const sel = this.git.selectedRef();
     return !this.git.showAll() && (sel ? sel === ref.name : ref.head);
+  }
+
+  protected isSyncedWithOrigin(ref: Ref) {
+    return ref.kind === 'local' && ref.upstream.startsWith('origin/') &&
+      this.git.refs().some((remote) => remote.kind === 'remote' && remote.name === ref.upstream && remote.hash === ref.hash);
   }
 
   protected track(t: string) {
