@@ -1,4 +1,16 @@
 <header class="flex h-12 shrink-0 items-center gap-1 border-b px-2">
+  @if (git.repo()) {
+    <button
+      hlmBtn variant="ghost" size="icon-sm"
+      [hlmTooltip]="branchesCollapsed() ? 'Show branches' : 'Collapse branches'"
+      [attr.aria-label]="branchesCollapsed() ? 'Show branches' : 'Collapse branches'"
+      [attr.aria-expanded]="!branchesCollapsed()"
+      aria-controls="branches-panel"
+      (click)="toggleBranches()"
+    >
+      <ng-icon [name]="branchesCollapsed() ? 'lucidePanelLeftOpen' : 'lucidePanelLeftClose'" />
+    </button>
+  }
   <button hlmBtn variant="ghost" size="sm" class="gap-2" [hlmDropdownMenuTrigger]="repoMenu">
     <ng-icon name="lucideFolderGit2" size="16" />
     <span class="max-w-72 truncate font-semibold">{{ git.repoName() || 'Open repository' }}</span>
@@ -81,11 +93,11 @@
 </header>
 
 @if (git.repo()) {
-  <hlm-resizable-group class="min-h-0 flex-1">
-    <hlm-resizable-panel [defaultSize]="18" [minSize]="10">
+  <hlm-resizable-group class="min-h-0 flex-1" [layout]="panelLayout()" (layoutChange)="panelLayout.set($event)">
+    <hlm-resizable-panel id="branches-panel" [defaultSize]="18" [minSize]="branchesCollapsed() ? 0 : 10" [maxSize]="branchesCollapsed() ? 0 : 100" [collapsible]="true" [attr.inert]="branchesCollapsed() ? '' : null" [attr.aria-hidden]="branchesCollapsed()">
       <app-branches />
     </hlm-resizable-panel>
-    <hlm-resizable-handle />
+    <hlm-resizable-handle [class.hidden]="branchesCollapsed()" />
     <hlm-resizable-panel [defaultSize]="60" [minSize]="30">
       <div class="flex h-full flex-col">
         @if (git.tabs().length) {

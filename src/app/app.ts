@@ -10,6 +10,8 @@ import {
   lucideHistory,
   lucideMonitor,
   lucideMoon,
+  lucidePanelLeftClose,
+  lucidePanelLeftOpen,
   lucideRefreshCw,
   lucideRefreshCcwDot,
   lucideSun,
@@ -65,6 +67,8 @@ function readTheme(): Theme {
       lucideHistory,
       lucideMonitor,
       lucideMoon,
+      lucidePanelLeftClose,
+      lucidePanelLeftOpen,
       lucideRefreshCw,
       lucideRefreshCcwDot,
       lucideSun,
@@ -76,6 +80,23 @@ function readTheme(): Theme {
 })
 export class App {
   protected readonly git = inject(GitService);
+  protected readonly branchesCollapsed = signal(false);
+  protected readonly panelLayout = signal([18, 60, 22]);
+  private branchesSize = 18;
+
+  protected toggleBranches() {
+    const [branches, history, changes] = this.panelLayout();
+    if (this.branchesCollapsed()) {
+      const restored = Math.max(10, Math.min(this.branchesSize, 56));
+      const right = Math.min(changes, 100 - restored - 30);
+      this.panelLayout.set([restored, 100 - restored - right, right]);
+    } else {
+      this.branchesSize = branches;
+      this.panelLayout.set([0, history + branches, changes]);
+    }
+    this.branchesCollapsed.update((collapsed) => !collapsed);
+  }
+
   protected readonly theme = signal<Theme>(readTheme());
   private readonly media = matchMedia('(prefers-color-scheme: dark)');
   private readonly systemDark = signal(this.media.matches);
