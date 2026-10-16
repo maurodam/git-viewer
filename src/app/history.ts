@@ -73,6 +73,8 @@ const MAX_LANES = 14;
         tabindex="0"
         class="hover:bg-muted/60 focus-visible:ring-ring flex cursor-default items-center text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-inset"
         [class.bg-accent]="git.selectedCommit()?.hash === item.c.hash"
+        [class.border-t-2]="item.divider"
+        [class.border-primary/50]="item.divider"
         [style.height.px]="row"
         [hlmContextMenuTrigger]="commitMenu"
         [hlmContextMenuTriggerData]="{ $implicit: item.c }"
@@ -102,6 +104,11 @@ const MAX_LANES = 14;
           }
         </div>
         <div class="flex min-w-0 flex-1 items-center gap-1.5 px-2">
+          @if (item.divider) {
+            <span class="text-muted-foreground shrink-0 text-[10px] font-semibold uppercase tracking-wide">
+              {{ item.sync === 'incoming' ? '↓ To pull' : item.sync === 'outgoing' ? '↑ To push' : 'Synced' }}
+            </span>
+          }
           @for (r of item.c.refs; track r) {
             <span
               hlmBadge
@@ -163,7 +170,12 @@ export class History {
   protected readonly rows = computed(() => {
     const f = this.filter().toLowerCase();
     const { rows } = this.git.graph();
-    const all = this.git.commits().map((c, i) => ({ c, g: f ? null : rows[i] }));
+    const sync = this.git.commitSync();
+    const commits = this.git.commits();
+    const all = commits.map((c, i) => ({
+      c, g: f ? null : rows[i], sync: sync.get(c.hash),
+      divider: !f && (i === 0 ? sync.has(c.hash) : sync.get(c.hash) !== sync.get(commits[i - 1].hash)),
+    }));
     if (!f) return all;
     return all.filter(
       ({ c }) => c.subject.toLowerCase().includes(f) || c.author.toLowerCase().includes(f) || c.hash.startsWith(f),

@@ -69,6 +69,7 @@ export class GitService {
 
   readonly refs = signal<Ref[]>([]);
   readonly commits = signal<Commit[]>([]);
+  readonly commitSync = signal<ReadonlyMap<string, 'incoming' | 'outgoing'>>(new Map());
   readonly graph = computed(() => buildGraph(this.commits()));
   /** Graph color of each shown commit, so branches can be painted like their line. */
   readonly commitColors = computed(() => {
@@ -189,6 +190,18 @@ export class GitService {
 
   async loadLog() {
     const range = this.showAll() ? ['--all'] : [this.selectedRef() ?? 'HEAD'];
+    const sync = new Map<string, 'incoming' | 'outgoing'>();
+    // Compare only the checked-out branch; other histories may have different upstreams.
+    if (!this.showAll() && (!this.selectedRef() || this.selectedRef() === this.branch()?.name)) {
+      const upstream = await this.git(['rev-parse', '--verify', '@{upstream}']).then(s => s.trim(), () => '');
+      if (upstream) {
+        range.push(upstream);
+        const pending = await this.git(['log', '--left-right', '--format=%m%H', `HEAD...${upstream}`, '--']);
+        for (const line of pending.trim().split('\n').filter(Boolean)) {
+          sync.set(line.slice(1), line[0] === '<' ? 'outgoing' : 'incoming');
+        }
+      }
+    }
     let out = '';
     try {
       out = await this.git([
@@ -202,6 +215,7 @@ export class GitService {
     } catch {
       // Empty repository (no commits yet) or a ref that no longer exists.
     }
+    this.commitSync.set(sync);
     this.commits.set(
       out
         .split('\x1e')
