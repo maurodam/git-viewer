@@ -25,6 +25,9 @@ jobs:
           - platform: macos-intel
             os: macos-latest
             command: npm run dist:mac -- --x64 --publish never
+          - platform: linux
+            os: ubuntu-latest
+            command: npm run dist:linux -- --x64 --publish never
     steps:
       - name: Check out source
         uses: actions/checkout@v4

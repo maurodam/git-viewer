@@ -30,8 +30,18 @@ Graph layout tests: `npm run test:graph`.
 ## macOS disk image
 
 `npm run dist:mac` builds the Angular app and creates macOS `.dmg` and `.zip` packages in `release/`.
-Run this command on macOS. GitHub Actions builds Windows and separate macOS Apple silicon (`arm64`) and Intel (`x64`)
-packages when you push a version tag (`v*`), then attaches the `.exe`, `.dmg`, and `.zip` files to that GitHub Release.
+Run this command on macOS.
+
+## Linux packages
+
+`npm run dist:linux -- --x64 --publish never` builds the Angular app and creates Linux x64 `.AppImage` and `.deb`
+packages in `release/`. Run this command on Linux. Git must be installed and available on `PATH` to use the app.
+
+## GitHub Releases
+
+GitHub Actions builds Windows, separate macOS Apple silicon (`arm64`) and Intel (`x64`), and Linux (`x64`)
+packages when you push a version tag (`v*`), then attaches the `.exe`, `.dmg`, `.zip`, `.AppImage`, and `.deb` files
+to that GitHub Release after all builds succeed.
 
 ## How it works
 
