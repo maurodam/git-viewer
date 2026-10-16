@@ -52,20 +52,20 @@ import { type FileChange, GitService, type Stash } from './git.service';
         <span class="text-foreground truncate text-sm font-semibold">{{ git.branch()?.name }}</span>
         @if (git.branch(); as b) {
           @if (b.upstream) {
-            <span class="tabular-nums" [title]="'Tracking ' + b.upstream">↑{{ b.ahead }} ↓{{ b.behind }}</span>
+            <span class="tabular-nums" [title]="'Tracking ' + b.upstream">↑{{ b.ahead }} / ↓{{ b.behind }}</span>
           } @else {
             <span>not published</span>
           }
         }
         <div class="ms-auto flex shrink-0 items-center">
-          <button hlmBtn variant="ghost" size="icon-xs" hlmTooltip="Fetch" aria-label="Fetch" [disabled]="git.busy()" (click)="git.fetch()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12" stroke-dasharray="2 4"/><path d="m6 15 6 6 6-6"/></svg>
+          <button hlmBtn variant="ghost" size="icon-sm" hlmTooltip="Fetch" aria-label="Fetch" [disabled]="git.busy()" (click)="git.fetch()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12" stroke-dasharray="2 4"/><path d="m6 15 6 6 6-6"/></svg>
           </button>
-          <button hlmBtn variant="ghost" size="icon-xs" hlmTooltip="Pull" aria-label="Pull" [disabled]="git.busy()" (click)="git.pull()">
-            <ng-icon name="lucideArrowDownToLine" />
+          <button hlmBtn variant="ghost" size="icon-sm" hlmTooltip="Pull" aria-label="Pull" [disabled]="git.busy()" (click)="git.pull()">
+            <ng-icon class="text-[20px]" name="lucideArrowDownToLine" />
           </button>
-          <button hlmBtn variant="ghost" size="icon-xs" hlmTooltip="Push" aria-label="Push" [disabled]="git.busy()" (click)="git.push()">
-            <ng-icon name="lucideArrowUpFromLine" />
+          <button hlmBtn variant="ghost" size="icon-sm" hlmTooltip="Push" aria-label="Push" [disabled]="git.busy()" (click)="git.push()">
+            <ng-icon class="text-[20px]" name="lucideArrowUpFromLine" />
           </button>
         </div>
       </div>
