@@ -52,7 +52,7 @@
   @if (git.repo()) {
     <div class="ms-2 flex items-center gap-0.5">
       <button hlmBtn variant="ghost" size="sm" hlmTooltip="Fetch all remotes" [disabled]="git.busy()" (click)="git.fetch()">
-        <ng-icon name="lucideRefreshCcwDot" /> Fetch
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12" stroke-dasharray="2 4"/><path d="m6 15 6 6 6-6"/></svg> Fetch
       </button>
       <button hlmBtn variant="ghost" size="sm" hlmTooltip="Pull current branch" [disabled]="git.busy()" (click)="git.pull()">
         <ng-icon name="lucideArrowDownToLine" /> Pull

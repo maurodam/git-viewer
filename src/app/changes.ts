@@ -12,7 +12,6 @@ import {
   lucideChevronsUpDown,
   lucideMinus,
   lucidePlus,
-  lucideRefreshCcwDot,
   lucideTrash2,
   lucideUndo2,
 } from '@ng-icons/lucide';
@@ -42,7 +41,6 @@ import { type FileChange, GitService, type Stash } from './git.service';
       lucideChevronsUpDown,
       lucideMinus,
       lucidePlus,
-      lucideRefreshCcwDot,
       lucideTrash2,
       lucideUndo2,
     }),
@@ -61,7 +59,7 @@ import { type FileChange, GitService, type Stash } from './git.service';
         }
         <div class="ms-auto flex shrink-0 items-center">
           <button hlmBtn variant="ghost" size="icon-xs" hlmTooltip="Fetch" aria-label="Fetch" [disabled]="git.busy()" (click)="git.fetch()">
-            <ng-icon name="lucideRefreshCcwDot" />
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12" stroke-dasharray="2 4"/><path d="m6 15 6 6 6-6"/></svg>
           </button>
           <button hlmBtn variant="ghost" size="icon-xs" hlmTooltip="Pull" aria-label="Pull" [disabled]="git.busy()" (click)="git.pull()">
             <ng-icon name="lucideArrowDownToLine" />

@@ -13,7 +13,6 @@ import {
   lucidePanelLeftClose,
   lucidePanelLeftOpen,
   lucideRefreshCw,
-  lucideRefreshCcwDot,
   lucideSun,
   lucideX,
 } from '@ng-icons/lucide';
@@ -71,7 +70,6 @@ function readTheme(): Theme {
       lucidePanelLeftClose,
       lucidePanelLeftOpen,
       lucideRefreshCw,
-      lucideRefreshCcwDot,
       lucideSun,
       lucideX,
     }),
