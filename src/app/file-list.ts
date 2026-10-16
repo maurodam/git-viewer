@@ -1,5 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, contentChild, input, output, TemplateRef } from '@angular/core';
+import { Component, computed, contentChild, input, output, signal, TemplateRef } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronRight, lucideFolder } from '@ng-icons/lucide';
+import { fileTree, visiblePath } from './file-tree';
 import type { FileChange } from './git.service';
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -15,21 +18,28 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 /** File rows: name, dimmed folder, status letter; optional per-row actions via an <ng-template let-file>. */
 @Component({
   selector: 'app-file-list',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, NgIcon],
+  providers: [provideIcons({ lucideChevronRight, lucideFolder })],
   template: `
-    <ul class="text-[13px]">
-      @for (group of groups(); track group.path) {
-        @if (groupByFolder()) {
-          <li class="text-muted-foreground flex items-center gap-2 px-2 pt-3 pb-1" [title]="group.fullPath">
-            <span class="shrink-0 text-xs font-semibold">{{ group.name }}</span>
-            <span class="min-w-0 flex-1 truncate text-right text-[10px]">{{ group.fullPath }}</span>
+    <ul class="text-[13px]" [attr.role]="groupByFolder() ? 'tree' : null" aria-label="Files">
+      @for (node of rows(); track node.path) {
+        @if (!node.file) {
+          <li role="treeitem" [attr.aria-level]="node.depth + 1" [attr.aria-expanded]="!collapsed().has(node.path)" class="group/row flex h-7 items-center gap-1.5 rounded-lg hover:bg-muted/60" [style.padding-inline-start.px]="node.depth * 14 + 4">
+            <button class="flex min-w-0 flex-1 items-center gap-1.5 text-left" [attr.aria-expanded]="!collapsed().has(node.path)" [title]="repoPath() + '/' + node.path" (click)="toggle(node.path)">
+              <ng-icon name="lucideChevronRight" size="14" class="shrink-0 transition-transform" [class.rotate-90]="!collapsed().has(node.path)" />
+              <ng-icon name="lucideFolder" size="14" class="text-muted-foreground shrink-0" />
+              <span class="truncate">{{ node.name }}</span>
+            </button>
           </li>
-        }
-        @for (f of group.files; track f.path) {
+        } @else {
+        @let f = node.file;
         <li
           tabindex="0"
+          [attr.role]="groupByFolder() ? 'treeitem' : null"
+          [attr.aria-level]="groupByFolder() ? node.depth + 1 : null"
           class="group/row hover:bg-muted/60 focus-visible:ring-ring flex h-7 cursor-default items-center gap-2 rounded-lg px-2 outline-none focus-visible:ring-2"
           [title]="f.path"
+          [style.padding-inline-start.px]="groupByFolder() ? node.depth * 14 + 22 : 8"
           (click)="open.emit(f)"
           (keydown.enter)="open.emit(f)"
           (dblclick)="openTab.emit(f)"
@@ -57,23 +67,19 @@ export class FileList {
   readonly files = input.required<FileChange[]>();
   readonly groupByFolder = input(false);
   readonly repoPath = input('');
-  protected readonly groups = computed(() => {
-    if (!this.groupByFolder()) return [{ path: '', name: '', fullPath: '', files: this.files() }];
-    const folders = new Map<string, FileChange[]>();
-    for (const file of this.files()) {
-      const path = this.dir(file.path);
-      const files = folders.get(path) ?? [];
-      files.push(file);
-      folders.set(path, files);
-    }
-    const root = this.repoPath().replace(/[\\/]$/, '');
-    return [...folders].sort(([a], [b]) => a.localeCompare(b)).map(([path, files]) => ({
-      path,
-      name: path ? this.name(path) : 'Root',
-      fullPath: path ? `${root}/${path}` : root,
-      files,
-    }));
-  });
+  protected readonly collapsed = signal(new Set<string>());
+  protected readonly rows = computed(() => this.groupByFolder()
+    ? fileTree(this.files()).filter((node) => visiblePath(node.path, this.collapsed()))
+    : this.files().map((file) => ({ path: file.path, name: file.path, depth: 0, file, files: [file] })));
+
+  protected toggle(path: string) {
+    this.collapsed.update((value) => {
+      const next = new Set(value);
+      if (!next.delete(path)) next.add(path);
+      return next;
+    });
+  }
+
   readonly open = output<FileChange>();
   readonly openTab = output<FileChange>();
   protected readonly actions = contentChild(TemplateRef);
