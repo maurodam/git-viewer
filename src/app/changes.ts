@@ -47,7 +47,7 @@ import { type FileChange, GitService, type Stash } from './git.service';
       lucideUndo2,
     }),
   ],
-  host: { class: 'flex h-full flex-col bg-sidebar text-sidebar-foreground' },
+  host: { '(keydown)': 'selectAll($event)', class: 'flex h-full flex-col bg-sidebar text-sidebar-foreground' },
   template: `
     <div class="border-b p-3">
       <div class="text-muted-foreground mb-2 flex items-center gap-2 text-xs">
@@ -146,9 +146,9 @@ import { type FileChange, GitService, type Stash } from './git.service';
         }
       </div>
       @if (open().staged) {
-        <app-file-list [files]="git.staged()" [groupByFolder]="true" [repoPath]="git.repo() ?? ''" (open)="git.showWorkingDiff($event, true)">
-          <ng-template let-f>
-            <button hlmBtn variant="ghost" size="icon-xs" aria-label="Unstage" (click)="$event.stopPropagation(); git.unstage([f.path])">
+        <app-file-list [(selected)]="selected" [files]="git.staged()" [groupByFolder]="true" [repoPath]="git.repo() ?? ''" (open)="git.showWorkingDiff($event, true)">
+          <ng-template let-f let-files="files">
+            <button hlmBtn variant="ghost" size="icon-xs" aria-label="Unstage" (click)="$event.stopPropagation(); git.unstage(paths(files))">
               <ng-icon name="lucideMinus" />
             </button>
           </ng-template>
@@ -171,12 +171,12 @@ import { type FileChange, GitService, type Stash } from './git.service';
         }
       </div>
       @if (open().changes) {
-        <app-file-list [files]="git.unstaged()" [groupByFolder]="true" [repoPath]="git.repo() ?? ''" (open)="git.showWorkingDiff($event, false)">
-          <ng-template let-f>
-            <button hlmBtn variant="ghost" size="icon-xs" aria-label="Discard changes" (click)="$event.stopPropagation(); discard(f)">
+        <app-file-list [(selected)]="selected" [canDiscardFolder]="true" (discardFolder)="discard($event)" [files]="git.unstaged()" [groupByFolder]="true" [repoPath]="git.repo() ?? ''" (open)="git.showWorkingDiff($event, false)">
+          <ng-template let-f let-files="files">
+            <button hlmBtn variant="ghost" size="icon-xs" aria-label="Discard changes" (click)="$event.stopPropagation(); discard(files)">
               <ng-icon name="lucideUndo2" />
             </button>
-            <button hlmBtn variant="ghost" size="icon-xs" aria-label="Stage" (click)="$event.stopPropagation(); git.stage([f.path])">
+            <button hlmBtn variant="ghost" size="icon-xs" aria-label="Stage" (click)="$event.stopPropagation(); git.stage(paths(files))">
               <ng-icon name="lucidePlus" />
             </button>
           </ng-template>
@@ -269,15 +269,34 @@ export class Changes {
     if (typeof msg === 'string') await this.git.run(['stash', 'push', '--include-untracked', '-m', msg], 'Changes stashed');
   }
 
-  protected async discard(f: FileChange) {
+  protected readonly selected = signal(new Set<string>());
+
+  protected selectAll(event: KeyboardEvent) {
+    const target = event.target as HTMLElement;
+    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'a' ||
+        target.closest('input, textarea, [contenteditable="true"]')) return;
+    event.preventDefault();
+    this.selected.set(new Set([...this.git.staged(), ...this.git.unstaged()].map((file) => file.path)));
+  }
+
+  protected paths(files: FileChange[]) {
+    return files.map((file) => file.path);
+  }
+
+  protected async discard(files: FileChange[]) {
+    if (this.git.busy() || !files.length) return;
     const ok = await this.ask({
-      title: f.status === '?' ? 'Delete untracked file?' : 'Discard changes?',
-      description: 'This cannot be undone.',
-      detail: f.path,
-      confirm: f.status === '?' ? 'Delete' : 'Discard',
+      title: `Discard changes in ${files.length} file(s)?`,
+      description: 'This cannot be undone. Untracked files will be deleted.',
+      detail: files.map((file) => file.path).join('\n'),
+      confirm: 'Discard',
       destructive: true,
     });
-    if (ok) await this.git.discard(f);
+    if (ok) {
+      for (const file of files) {
+        if (!(await this.git.discard(file))) break;
+      }
+    }
   }
 
   protected async drop(s: Stash) {
