@@ -134,6 +134,16 @@ export class GitService {
     }
   }
 
+  removeRecent(path: string) {
+    const recent = this.recent().filter((p) => p !== path);
+    try {
+      localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+    } catch {
+      // Recent list is a convenience only.
+    }
+    this.recent.set(recent);
+  }
+
   setRepo(path: string) {
     const recent = [path, ...this.recent().filter((p) => p !== path)].slice(0, 10);
     try {

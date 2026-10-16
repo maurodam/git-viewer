@@ -18,9 +18,20 @@
         <hlm-dropdown-menu-separator />
         <hlm-dropdown-menu-label>Recent</hlm-dropdown-menu-label>
         @for (r of git.recent(); track r) {
-          <button hlmDropdownMenuItem (triggered)="git.setRepo(r)" [title]="r">
-            <span class="truncate">{{ r }}</span>
-          </button>
+          <div class="flex items-center gap-1">
+            <button hlmDropdownMenuItem class="min-w-0 flex-1" (triggered)="git.setRepo(r)" [title]="r">
+              <span class="truncate">{{ r }}</span>
+            </button>
+            <button
+              hlmDropdownMenuItem
+              class="w-8 shrink-0 justify-center"
+              [attr.aria-label]="'Remove from recent repositories: ' + r"
+              title="Remove from recent repositories"
+              (triggered)="git.removeRecent(r)"
+            >
+              <ng-icon name="lucideX" />
+            </button>
+          </div>
         }
       }
     </hlm-dropdown-menu>
